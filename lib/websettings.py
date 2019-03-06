@@ -65,17 +65,18 @@ class websettings:
         return self.template.replace('[','{').replace(']','}')
 
     def generate_reaction_good(self):
-        return "HTTP/1.0 200 OK <!doctype html> All good, good reaction wait for a while !"
+        return "<!doctype html> All good, good reaction wait for a while will reset and send mqtt/sensor data every 10 mins!"
 
 
     def generate_reaction_bad(self):
-        return "HTTP/1.0 200 OK <!doctype html> All bad wait a while but in general fuck u"
+        return "<!doctype html> All bad wait a while but in general fuck u"
 
 
     def addTempVars(self, adict):
         self.tempvars.update(adict)
 
-
+    def write_html(self,client_stream, html):
+        client_stream.write("HTTP/1.0 200 OK\nContent-Type: text/html\n\n" + html)
 
     def setTemplate(self, filename):
         self.template = makefileifneed(filename).read()
@@ -90,24 +91,23 @@ class websettings:
             res = s.accept()
             client_sock = res[0]
             client_addr = res[1]
-            client_stream = client_sock
-            req = client_stream.readline()
+
+            req = client_sock.readline()
             while True:
-                h = client_stream.readline()
+                h = client_sock.readline()
                 if h == b"" or h == b"\r\n" or h == None:
                     break
 
 
-            client_stream.write(self.generate_html())
+            
             if self.handle_form(req):
-                print("yes form handle !")
-                client_stream.write(self.generate_reaction_good())
+                self.write_html(client_sock, self.generate_reaction_good())
                 time.sleep(5)
                 reset()
+            else:
+                self.write_html(client_sock, self.generate_html())
 
-            client_stream.close()
-            print("reaction ok !, web !!!")
-
+            client_sock.close()
             
         except Exception as e:
             print("timeout for web... moving on...", e)

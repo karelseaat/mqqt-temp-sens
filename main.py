@@ -89,7 +89,7 @@ def captive_portal(websets):
         htu = HTU21D(i2c)
 
 
-        mqc = MQTTClient("klont", existing_config['mqaddress'], user='aaps', password='kippy123')
+        mqc = MQTTClient("klont", existing_config['mqaddress'], user=existing_config['mqname'], password=existing_config['mqpass'])
         mqc.connect()
         mqc.publish(b"temparature/aatliving", str(htu.temperature))
         mqc.publish(b"humidity/aatliving", str(htu.humidity))
@@ -104,8 +104,7 @@ websets = websettings()
 
 clear = Pin(0)
 if not clear.value():
+	print("clearing settings !")
 	websets.clear_settings()
-
-
 
 captive_portal(websets)
