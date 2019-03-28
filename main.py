@@ -1,6 +1,6 @@
 import gc
 import time
-import ujson
+
 
 from filehelper import makefileifneed
 from websettings import websettings
@@ -79,7 +79,7 @@ def captive_portal(websets):
         from umqtt.simple import MQTTClient
         import machine
         from htu21d import HTU21D
-
+        import ujson
         from machine import I2C
 
         connection(existing_config['networkname'],existing_config['password'])
@@ -89,10 +89,13 @@ def captive_portal(websets):
         htu = HTU21D(i2c)
 
 
-        mqc = MQTTClient("klont", existing_config['mqaddress'], user=existing_config['mqname'], password=existing_config['mqpass'])
+        mqc = MQTTClient("klont3", existing_config['mqaddress'], user=existing_config['mqname'], password=existing_config['mqpass'])
         mqc.connect()
-        mqc.publish(b"temparature/aatliving", str(htu.temperature))
-        mqc.publish(b"humidity/aatliving", str(htu.humidity))
+
+        mqc.publish(b"temp/buiten", str(htu.temperature))
+        time.sleep_ms(100)
+        mqc.publish(b"hum/buiten", str(htu.humidity))
+        time.sleep_ms(100)
         mqc.disconnect()
 
         rtc = machine.RTC()

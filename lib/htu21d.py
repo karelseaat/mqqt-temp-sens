@@ -6,7 +6,10 @@ class HTU21D(object):
     ISSUE_HU_ADDRESS = b'\xF5'
 
     def __init__(self, i2c):
-        self.i2c = i2c 
+        self.i2c = i2c
+        if 64 not in i2c.scan():
+            raise ValueError('Could not find the sensor on the i2c bus')
+
 
     def _crc_check(self, value):
         remainder = ((value[0] << 8) + value[1]) << 8
