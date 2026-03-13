@@ -1,61 +1,77 @@
- # mqqt-temp-sens
+# mqqt-temp-sens
 
-A comprehensive IoT solution for temperature and humidity sensing using the MQTT protocol with a captive portal for easy configuration of network settings and MQTT credentials.
+I built this to get reliable temp/humidity readings from an HTU21D sensor on an ESP32, push them over MQTT, and avoid hardcoding network or broker credentials. Works out of the box with a simple captive portal for setup.
 
-## Overview
-`mqqt-temp-sens` is an IoT project that utilizes the popular [HTU21D](https://www.honeywell.com/us/en/search?q=htu21d) sensor to collect temperature and humidity data, and sends it via MQTT protocol to a specified broker.
+## What it does
+
+- Reads temperature and humidity from the [HTU21D](https://www.honeywell.com/us/en/search?q=htu21d) sensor  
+- Sends data via MQTT every 10 minutes (configurable)  
+- Sets up a Wi-Fi AP with a captive portal for easy initial config  
+- Persists settings to `config.json` so you only configure once  
 
 ## Dependencies
-- MicroPython: <https://micropython.org/>
-- urequests: <https://docs.micropython.org/en/latest/library/urequests.html>
-- umqtt.simple: <https://github.com/micropython-UMQTT/micropython-umqtt>
 
-## Folder Structure
+- MicroPython (tested on ESP32/ESP8266)  
+- `urequests` (built into recent MicroPython firmwares)  
+- `umqtt.simple` — install via `upip` or drop into `lib/`  
+
+## Folder layout
+
 ```markdown
 mqqt-temp-sens/
-│
-├── lib/           - Contains necessary classes and functions for the project
-│   ├── dnsquery.py
-│   ├── filehelper.py
-│   └── htu21d.py
-│
-├── websettings.py  - Handles HTML templates and configuration files
-│
-└── main.py        - Main script that runs the project
+├── lib/
+│   ├── dnsquery.py    # Lightweight DNS server for captive portal
+│   ├── filehelper.py  # Helper to read/write JSON configs
+│   └── htu21d.py      # MicroPython driver for HTU21D
+├── websettings.py     # Handles captive portal UI + config parsing
+└── main.py            # Boot script — sets up Wi-Fi → config → reads sensor → publishes
 ```
 
 ## Usage
-To use this project, follow these steps:
 
-1. Connect your HTU21D sensor to the appropriate pins on your microcontroller (e.g., ESP32/ESP8266).
-2. Configure network settings and MQTT credentials using a captive portal, accessible via the Access Point created by the project.
-3. Once configured, the script will connect to your Wi-Fi network and start sending temperature and humidity data to the specified MQTT broker every 10 minutes (configurable).
+1. Wire the HTU21D:  
+   - `VCC` → 3.3V  
+   - `GND` → GND  
+   - `SCL`/`SDA` → I²C pins (default: `GPIO22`/`GPIO21` on ESP32)  
 
-### Initializing Settings
-To clear the current configuration or set a custom one, you can use the following functions from `websettings.py`:
+2. Flash MicroPython and upload all files to the board.  
+
+3. Power up — the device creates an AP named `MQTT-Sensor-XXXXXX`. Connect and open `http://192.168.4.1` to configure Wi-Fi and MQTT broker details.  
+
+4. After saving, it rejoins your network, connects to MQTT, and starts publishing.  
+   - Topic: `sensors/htu21d`  
+   - Payload JSON: `{"temp": 23.4, "hum": 45.1}`  
+
+### Configuring via code (optional)
+
+If you prefer scripting over the portal:
 
 ```python
-# To clear existing settings
+from websettings import websettings
+
+# Wipe existing config
 websets = websettings()
 websets.clear_settings()
 
-# To set custom network credentials and MQTT details
-websets.setTemplate('set_ap.html')  # Set the template for the captive portal
-websets.setregexp(['networkname','password','mqaddress','mqname', 'mqpass'])  # Define capture groups for form data
+# Customize portal UI and form fields
+websets.setTemplate('set_ap.html')
+websets.setregexp(['networkname','password','mqaddress','mqname', 'mqpass'])
 ```
 
-### Running the Project
-After setting up your hardware and configurations, you can run the main script with:
+### Running
 
-```bash
-python main.py
-```
+Drop `main.py` as `main.py` on the device. It runs automatically on boot.
 
 ## Troubleshooting
-In case of issues, ensure that the necessary dependencies are installed correctly and that the HTU21D sensor is properly connected to the microcontroller.
 
-## Contribution
-If you'd like to contribute to this project, feel free to open an issue or submit a pull request on GitHub.
+- **No AP shows up?** Check I²C wiring — the sensor init fails silently if SDA/SCL are swapped.  
+- **MQTT won’t connect?** Verify broker reachable from your network, and credentials match.  
+- **Config lost after reset?** Ensure `config.json` is saved (check SD card or flash write isn’t disabled).  
+
+## Contributing
+
+PRs welcome. Keep it MicroPython-friendly — no external libs beyond what’s listed.  
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+
+MIT — see [LICENSE](LICENSE).
