@@ -75,3 +75,7 @@ PRs welcome. Keep it MicroPython-friendly — no external libs beyond what’s l
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## More from Karelseaat
+
+For more projects and experiments, visit my GitHub Pages site: [karelseaat.github.io](https://karelseaat.github.io/)
